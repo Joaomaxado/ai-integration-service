@@ -1,15 +1,24 @@
-import os 
-from fastapi import Header, HTTPException
+import os
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+bearer_scheme = HTTPBearer(auto_error=False)
+
 
 async def verify_service_token(
-        authorization: str | None = Header(default=None),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> None:
-    expected = os.environ['5566846a3948be489879fefa2447209609ee45b8e4130dac7c46578b6a17b429']
-    expected_header = f'Bearer {expected}'
-
-    if authorization != expected_header:
+    expected = os.getenv("INTERNAL_SERVICE_TOKEN")
+    if not expected:
         raise HTTPException(
-            status_code=401,
-            detail='Invalid Service Credentials'
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="INTERNAL_SERVICE_TOKEN não está configurado.",
         )
-    
+
+    token = credentials.credentials if credentials else None
+    if token != expected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais inválidas ou ausentes.",
+        )

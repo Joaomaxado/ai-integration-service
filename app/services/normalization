@@ -1,0 +1,12 @@
+external_id
+process_number
+source
+court
+movement_date
+captured_at
+title
+description
+raw_reference
+content_hash
+
+# substituir pelos nomes de contratos aprovados
