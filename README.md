@@ -1,6 +1,6 @@
 # ai-integration-service
 
-API FastAPI para o backend Java solicitar resumos de movimentações.
+API FastAPI para o backend Java solicitar resumos de movimentações (Claude) e consultas processuais (Judit).
 
 ## Subir o serviço
 

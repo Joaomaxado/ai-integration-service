@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -19,10 +20,21 @@ class SummarizeRequest(CamelModel):
     process_id: str = Field(min_length=1, examples=["550e8400-e29b-41d4-a716-446655440001"])
     movement_id: str = Field(min_length=1, examples=["movement-456"])
     operation: str = Field(default="summarize")
-    text: str = Field(min_length=1, examples=["Texto autorizado da movimentação judicial."])
+    text: str | None = Field(
+        default=None,
+        min_length=1,
+        examples=["Texto autorizado da movimentação judicial."],
+    )
+    cnj: str | None = Field(default=None, examples=["0000000-00.0000.0.00.0000"])
     event_date: datetime | None = None
     source: str = Field(min_length=1, examples=["pmlex-backend"])
     permissions: list[str] = Field(default_factory=list, examples=[["ai:summarize"]])
+
+    @model_validator(mode="after")
+    def require_text_or_cnj(self):
+        if not (self.text or self.cnj):
+            raise ValueError("Informe text e/ou cnj.")
+        return self
 
 
 class Evidence(CamelModel):
@@ -44,6 +56,28 @@ class SummaryResponse(CamelModel):
     model: str | None = None
     prompt_version: str | None = None
     error_code: str | None = None
+
+
+class ClaudeSummarizeRequest(CamelModel):
+    request_id: str = Field(min_length=1, examples=["req-001"])
+    process_id: str = Field(min_length=1, examples=["550e8400-e29b-41d4-a716-446655440001"])
+    movement_id: str = Field(min_length=1, examples=["movement-456"])
+    operation: str = Field(default="summarize")
+    text: str = Field(min_length=1, examples=["Texto autorizado da movimentação judicial."])
+    source: str = Field(min_length=1, examples=["pmlex-backend"])
+    permissions: list[str] = Field(default_factory=list, examples=[["ai:summarize"]])
+
+
+class JuditConsultRequest(CamelModel):
+    cnj: str = Field(min_length=1, examples=["0000000-00.0000.0.00.0000"])
+    wait_for_result: bool = True
+
+
+class JuditConsultResponse(CamelModel):
+    request_id: str
+    status: str
+    cnj: str
+    data: dict[str, Any] | list | None = None
 
 
 class ErrorResponse(CamelModel):

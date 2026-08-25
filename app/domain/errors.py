@@ -40,6 +40,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         401: "UNAUTHORIZED",
         403: "FORBIDDEN",
         404: "NOT_FOUND",
+        502: "BAD_GATEWAY",
         503: "SERVICE_UNAVAILABLE",
     }
     message = exc.detail if isinstance(exc.detail, str) else "Erro ao processar a requisição."

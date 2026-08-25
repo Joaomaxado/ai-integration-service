@@ -11,7 +11,7 @@ load_dotenv()
 app = FastAPI(
     title="AI Integration Service",
     version="1.0.0",
-    description="API interna para o backend Java solicitar resumos de movimentações.",
+    description="API interna para o backend Java solicitar resumos de movimentações, consultas Judit e Claude.",
 )
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

@@ -1,6 +1,6 @@
-# Contrato da API (consumo pelo backend Java)
+# Contrato da API
 
-Base URL local: `http://localhost:8000`
+Base URL: `https://ai-integration-service-5l3r.onrender.com/`
 
 Autenticação em todas as rotas `/v1/ai/*`:
 
@@ -9,11 +9,11 @@ Authorization: Bearer <INTERNAL_SERVICE_TOKEN>
 Content-Type: application/json
 ```
 
-O JSON usa **camelCase** (`requestId`, `processId`). `snake_case` também é aceito na entrada.
-
-OpenAPI: `http://localhost:8000/openapi.json`
+OpenAPI: `https://ai-integration-service-5l3r.onrender.com/openapi.json`
 
 ## `POST /v1/ai/summaries`
+
+Orquestra Judit (quando `cnj` é informado) e Claude (resumo). Informe `text`, `cnj` ou ambos.
 
 ### Request
 
@@ -25,12 +25,11 @@ OpenAPI: `http://localhost:8000/openapi.json`
   "movementId": "movement-456",
   "operation": "summarize",
   "text": "Texto autorizado da movimentação judicial.",
+  "cnj": "0000000-00.0000.0.00.0000",
   "source": "pmlex-backend",
   "permissions": ["ai:summarize"]
 }
 ```
-
-`userId` é opcional. `processId` e `movementId` são strings.
 
 ### Response 200
 
@@ -39,7 +38,7 @@ OpenAPI: `http://localhost:8000/openapi.json`
   "requestId": "req-001",
   "status": "completed",
   "operation": "summarize",
-  "summary": "Resumo curto baseado no texto fornecido.",
+  "summary": "Resumo gerado pelo Claude.",
   "keyPoints": ["Ponto principal identificado no texto."],
   "evidence": [
     {
@@ -51,11 +50,34 @@ OpenAPI: `http://localhost:8000/openapi.json`
   "potentialLegalConsequence": null,
   "humanReviewRequired": true,
   "confidence": "low",
-  "model": "local-stub",
+  "model": "claude-3-5-sonnet-20241022",
   "promptVersion": "summary-v1",
   "errorCode": null
 }
 ```
+
+## `POST /v1/ai/claude/summaries`
+
+Resumo direto no Claude, sem consulta Judit. Corpo igual ao summarize, com `text` obrigatório.
+
+## `POST /v1/ai/judit/consult`
+
+Consulta processo na Judit por CNJ.
+
+```json
+{
+  "cnj": "0000000-00.0000.0.00.0000",
+  "waitForResult": true
+}
+```
+
+## `GET /v1/ai/judit/requests/{request_id}`
+
+Status da requisição assíncrona na Judit.
+
+## `GET /v1/ai/judit/responses?requestId={request_id}`
+
+Resultados da consulta Judit quando o status for `completed`.
 
 ### Erros
 
