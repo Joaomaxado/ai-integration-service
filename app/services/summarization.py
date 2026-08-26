@@ -1,10 +1,20 @@
 import re
+import os
+from anthropic import AsyncAnthropic
 
 from app.config import get_settings
 from app.domain.schemas import Evidence, SummarizeRequest, SummaryResponse
 from app.integrations.claude_client import get_claude_client
 from app.integrations.judit_client import get_judit_client, responses_to_text
 
+async def generate_response(self, system: str, user: str):
+        response = await self.client.messages.create(
+            model=self.model,
+            max_tokens=2000,
+            system=system,
+            messages=[{"role": "user", "content": user}]
+        )
+        return response.content[0].text
 
 async def build_summary(payload: SummarizeRequest) -> SummaryResponse:
     source_text, uncertainties, summary_status = await _resolve_source_text(payload)

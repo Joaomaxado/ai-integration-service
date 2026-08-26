@@ -1,10 +1,17 @@
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
+
+class LegalPoint(BaseModel):
+    text: str
+    status: Literal['V', 'I', 'U', 'C', 'N']
+    confidence: Literal['low', 'medium', 'high']
+    evidence_quote: str
 
 class CamelModel(BaseModel):
     model_config = ConfigDict(
