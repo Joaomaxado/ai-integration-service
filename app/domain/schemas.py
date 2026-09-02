@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
@@ -93,3 +92,101 @@ class ErrorResponse(CamelModel):
     code: str
     message: str
     details: str | list | dict | None = None
+
+
+class Chunk(CamelModel):
+    chunk_id: str
+    document_id: str
+    office_id: str
+    text: str
+    position: int
+    embedding: list[float]
+
+
+class IngestDocumentRequest(CamelModel):
+    document_id: str = Field(min_length=1)
+    office_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    source_url: str | None = None
+
+
+class IngestDocumentResponse(CamelModel):
+    document_id: str
+    office_id: str
+    chunks: list[Chunk]
+
+
+class TemplateRequest(CamelModel):
+    name: str = Field(min_length=1)
+    office_id: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    status: Literal["DRAFT", "APPROVED"] = "DRAFT"
+
+
+class TemplateResponse(TemplateRequest):
+    template_id: str
+    version: int
+
+
+class GenerateDraftRequest(CamelModel):
+    office_id: str = Field(min_length=1)
+    template_id: str
+    request_text: str = Field(min_length=1)
+    document_ids: list[str] = Field(default_factory=list)
+
+
+class DraftResponse(CamelModel):
+    draft_id: str
+    template_id: str
+    office_id: str
+    status: Literal["DRAFT"] = "DRAFT"
+    content: str
+    citations: list[str] = Field(default_factory=list)
+
+
+class PrecedentRequest(CamelModel):
+    office_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    source_url: str | None = None
+    source_citation: str | None = None
+
+    @model_validator(mode="after")
+    def require_verifiable_source(self):
+        if not (self.source_url or self.source_citation):
+            raise ValueError("Precedente exige source_url ou source_citation verificável.")
+        return self
+
+
+class PrecedentResponse(PrecedentRequest):
+    precedent_id: str
+    status: Literal["PRE"] = "PRE"
+
+
+class Traceability(CamelModel):
+    assertion: str | None = None
+    fact: str | None = None
+    proof_id: str | None = None
+    document_id: str | None = None
+    location: str | None = None
+
+
+class AuditFinding(CamelModel):
+    severity: Literal["CRITICO", "ALTO", "MEDIO", "BAIXO"]
+    code: str
+    message: str
+    traceability: Traceability | None = None
+
+
+class AuditRequest(CamelModel):
+    office_id: str = Field(min_length=1)
+    document_ids: list[str] = Field(default_factory=list)
+    assertions: list[Traceability] = Field(default_factory=list)
+
+
+class AuditResponse(CamelModel):
+    audit_id: str
+    office_id: str
+    status: Literal["OK", "C"]
+    findings: list[AuditFinding] = Field(default_factory=list)

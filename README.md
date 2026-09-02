@@ -12,8 +12,8 @@ copy .env.exemple .env
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Healthcheck: `GET http://localhost:8000/health`
+Healthcheck: `GET https://ai-integration-service-5l3r.onrender.com/health`
 
 Contrato para o Java: `docs/api-contract.md`
 
-Swagger: `http://localhost:8000/docs`
+Swagger: `https://ai-integration-service-5l3r.onrender.com/docs`

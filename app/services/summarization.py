@@ -1,6 +1,4 @@
 import re
-import os
-from anthropic import AsyncAnthropic
 
 from app.config import get_settings
 from app.domain.schemas import Evidence, SummarizeRequest, SummaryResponse

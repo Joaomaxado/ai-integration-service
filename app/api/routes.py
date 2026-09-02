@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.auth import verify_service_token
 from app.domain.schemas import (
@@ -7,9 +7,13 @@ from app.domain.schemas import (
     JuditConsultResponse,
     SummarizeRequest,
     SummaryResponse,
+    AuditRequest, AuditResponse, DraftResponse, GenerateDraftRequest,
+    IngestDocumentRequest, IngestDocumentResponse, PrecedentRequest, PrecedentResponse,
+    TemplateRequest, TemplateResponse,
 )
 from app.integrations.judit_client import get_judit_client
 from app.services.summarization import build_summary, summarize_with_claude
+from app.services.legal_workflow import legal_workflow
 
 router = APIRouter(prefix="/v1/ai")
 summaries_router = APIRouter(tags=["AI Integration"])
@@ -90,3 +94,39 @@ async def get_judit_responses(
 router.include_router(summaries_router)
 router.include_router(judit_router)
 router.include_router(claude_router)
+
+
+legal_router = APIRouter(prefix="/legal", tags=["Legal AI"], dependencies=[Depends(verify_service_token)])
+
+
+@legal_router.post("/documents", response_model=IngestDocumentResponse)
+async def ingest_document(payload: IngestDocumentRequest) -> IngestDocumentResponse:
+    document = legal_workflow.rag.ingest(**payload.model_dump())
+    return IngestDocumentResponse(document_id=document.document_id, office_id=document.office_id,
+                                   chunks=list(document.chunks))
+
+
+@legal_router.post("/templates", response_model=TemplateResponse)
+async def create_template(payload: TemplateRequest) -> TemplateResponse:
+    return legal_workflow.save_template(payload)
+
+
+@legal_router.post("/drafts", response_model=DraftResponse)
+async def generate_draft(payload: GenerateDraftRequest) -> DraftResponse:
+    try:
+        return await legal_workflow.generate_draft(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@legal_router.post("/precedents", response_model=PrecedentResponse)
+async def create_precedent(payload: PrecedentRequest) -> PrecedentResponse:
+    return legal_workflow.save_precedent(payload)
+
+
+@legal_router.post("/audits", response_model=AuditResponse)
+async def audit_legal_document(payload: AuditRequest) -> AuditResponse:
+    return legal_workflow.audit(payload)
+
+
+router.include_router(legal_router)
